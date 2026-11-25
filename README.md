@@ -8,6 +8,8 @@ Signal-processing pipeline that flags candidate embolic events in a Doppler ultr
 
 > **Status.** Exploratory analysis written in 2024, not actively maintained. It is demonstrated on a single recording without reference annotations, so detection performance (sensitivity, false-alarm rate) has **not** been measured.
 
+> **Context.** Developed in 2024 during my engineering studies at [ESEO](https://www.eseo.fr), within study and research projects carried out in collaboration with ESEO. Exploratory scope: this is not a clinical study and makes no claim of clinical validity.
+
 | | |
 |---|---|
 | **Input** | Stereo WAV, 4,398 Hz, 871 s, read as a complex quadrature signal. A 10 s segment is analysed. |
