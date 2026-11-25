@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Embolism Detection in Doppler Ultrasound Signals"
+abstract: "Notebook-based signal-processing pipeline that flags candidate embolic events in a stereo Doppler ultrasound recording."
+authors:
+  - family-names: Beucher
+    given-names: Jean-Eudes
+repository-code: "https://github.com/jeaneudes4586957/Embolism-Detection-Using-Doppler-Ultrasound-Signals"
+license: MIT

@@ -1,31 +1,75 @@
+# Embolism Detection in Doppler Ultrasound Signals
 
-# Embolism Detection Using Doppler Ultrasound Signals
+Signal-processing pipeline that flags candidate embolic events in a Doppler ultrasound recording, using short-time spectral energy, background subtraction and repeated noisy peak detection.
 
-## Project Overview
+<p align="center">
+  <img src="assets/overview.png" alt="Spectrogram, detected events and detection counts over 200 noisy iterations" width="620">
+</p>
 
-This project focuses on the early detection of embolisms using Doppler ultrasound signals, which are crucial for effective patient care. By analyzing these signals, the project aims to distinguish embolisms from noise using advanced signal processing techniques. The goal is to enhance the reliability of embolism diagnosis through a combination of methods, including peak detection, artifact suppression, and energy analysis.
+> **Status.** Exploratory analysis written in 2024, not actively maintained. It is demonstrated on a single recording without reference annotations, so detection performance (sensitivity, false-alarm rate) has **not** been measured.
 
-## Key Features
+| | |
+|---|---|
+| **Input** | Stereo WAV, 4,398 Hz, 871 s, read as a complex quadrature signal. A 10 s segment is analysed. |
+| **Output** | Times of candidate embolic events. On the analysed segment: 2 events, at 5.50 s and 6.35 s. |
+| **Evaluation** | None (no labelled events). |
+| **Code** | Python notebook, NumPy / SciPy / Matplotlib. |
 
-- **Signal Visualization**: Load and segment WAV audio files, visualize the real and imaginary parts of the recorded signal.
-- **Frequency Analysis and Spectrogram**: Calculate and display frequency spectra and spectrograms.
-- **Energy Analysis**: Compute energy over epochs and visualize energy variations.
-- **Signal Filtering**: Apply low-pass filters and analyze filtered signals to isolate noise.
-- **Outlier Removal**: Clean signals by removing outliers and identifying significant noise patterns.
-- **Embolism Detection**: Detect embolisms using peak-finding algorithms, visualize detected embolisms, and count occurrences.
-- **Envelope Extraction**: Extract and smooth the negative envelope of signals for enhanced analysis.
-- **Iterative Detection**: Analyze embolisms across multiple iterations with added noise to detect stable peaks.
-- **Artifact Suppression**: Address and suppress artifacts in Doppler signals.
-- **Percentile-Based Peak Detection**: Detect peaks using percentile thresholds for refined embolism identification.
-- **Peak Selection**: Refine detection by selecting peaks within specific temporal windows.
+## Overview
 
-## Libraries Used
+Embolic events appear in Doppler signals as short, high-intensity transients on top of background noise. The pipeline estimates a short-time energy trace, subtracts a smoothed background, and detects transients that stand out from it. Peaks that also appear in the negative-frequency energy are treated as artefacts and discarded.
 
-- **NumPy**: For numerical computations and array manipulations.
-- **SciPy**: For signal processing (e.g., spectrograms, filters, peak detection).
-- **Matplotlib**: For visualizing data and signals.
+## Method
 
-## Why This Project?
+All steps are in [`notebooks/embolism_detection.ipynb`](notebooks/embolism_detection.ipynb).
 
-The accurate detection of embolisms using Doppler signals is critical in medical diagnostics. This project combines robust signal processing techniques to create a reliable pipeline for identifying embolisms, contributing to improved clinical outcomes.
+1. Load the WAV file, build the complex signal and select a 10 s segment (0-10 s).
+2. Frequency spectrum and spectrogram of the segment.
+3. Short-time energy: 64-sample Hamming windows, 80 % overlap, 512-point FFT.
+4. Background estimation by low-pass Butterworth smoothing, subtraction and outlier removal.
+5. Detection, in three variants:
+   - fixed-height peak detection (threshold `1.5e8`);
+   - distance of the trace to a smoothed negative envelope;
+   - 200 repetitions with added Gaussian noise (fixed seed), keeping positions detected in more than 100 of them.
+6. Artefact handling: peaks above the 99th percentile of the negative-frequency energy are treated as artefacts, and detections that coincide with them are discarded.
 
+## Results (notebook outputs)
+
+- Fixed-threshold detection: 2 candidate events in the analysed segment.
+- Repeated noisy detection: the same 2 events, at 5.50 s and 6.35 s; both exceed the 100-repetition threshold and no other position does (panel c). They are unchanged after artefact suppression.
+
+Without annotations, it cannot be said whether these are true embolic events.
+
+## Limitations
+
+- One recording; only its first 10 s (of 871 s) are analysed.
+- Thresholds and filter parameters are set by hand; there is no labelled data and no cross-validation.
+- The repeated-detection step depends on a random noise realisation. Before the seed was fixed, the reported times varied from run to run: 4.96 s and 5.91 s in the original 2024 outputs, 5.34 s and 6.23 s in one re-run (always 2 events). The times above are those of seed 0 and should be read with an uncertainty of the order of 0.5 s.
+
+## Repository structure
+
+```
+notebooks/embolism_detection.ipynb   analysis notebook
+data/T54_a.wav                       input recording
+data/README.md                       data description
+assets/overview.png                  figure above (from the notebook outputs)
+requirements.txt
+CITATION.cff
+LICENSE
+```
+
+## Reproducing
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cd notebooks && jupyter lab        # open embolism_detection.ipynb and run all cells
+```
+
+The notebook was re-executed end to end (no errors) with Python 3.13, NumPy 2.5.3, SciPy 1.18.1 and Matplotlib 3.11.2; the saved outputs and figures come from that run. Window functions are imported from `scipy.signal.windows`, because `hamming` and `kaiser` were removed from `scipy.signal` in recent SciPy releases.
+
+## Citation and licence
+
+See [`CITATION.cff`](CITATION.cff). Code released under the [MIT licence](LICENSE). The recording is not covered by this licence (see [`data/README.md`](data/README.md)).
+
+Author: Jean-Eudes Beucher
